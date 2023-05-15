@@ -1,3 +1,5 @@
+# 后续更新使用配置说明。。。
+
 # 软件要求
 - ansible
 - ansible-playbook
