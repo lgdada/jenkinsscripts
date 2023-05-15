@@ -1,0 +1,25 @@
+FROM harbor.corptssl.com/library/golang:1.18-alpine-1.0 as builder
+
+WORKDIR /data
+
+COPY sourcecode/ .
+
+RUN  go version && go env &&  \
+     CGO_ENABLED=1 GOOS=linux GOARCH=amd64  go build \
+     -ldflags "-linkmode 'external' -extldflags '-static' -X 'main.gitCommit=$(git rev-parse HEAD)' -X 'main.buildDate=$(date +%Y-%m-%d)'  -X 'main.gitDate=$(git show -s --format=%cd $(git rev-parse HEAD) --date=short)'" \
+     -v -o mpbackend ./cmd/backend
+
+#生成中间镜像后,将build之后的可执行文件考到新的镜像中
+FROM harbor.corptssl.com/library/ethereum/solc:0.6.10 as solcCompiler
+
+FROM harbor.corptssl.com/library/alpine:latest-1.0
+
+COPY --from=solcCompiler /usr/bin/solc /usr/local/bin
+
+COPY --from=builder  /data/mpbackend  /usr/local/bin
+
+COPY --from=builder  /data/resources  /data/resources
+
+WORKDIR /data
+
+CMD ["mpbackend"]

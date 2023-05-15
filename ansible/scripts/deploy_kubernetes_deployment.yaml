@@ -1,0 +1,9 @@
+# k8s应用部署脚本，使用docker run允许kubectl命令并更新deployment镜像
+- name: "生成部署脚本: run_deploy.sh"
+  blockinfile:
+    create: yes
+    path: "{{workspace}}/run_deploy.sh"
+    block: |
+      set -e
+      cd {{workspace}}
+      docker run --rm -v {{workspace}}/ansible/files/{{project_vars['kubernetes']['config']}}:/.kube/config {{project_vars['kubernetes']['kubectl']}} set image deployment/{{task}} {{task}}={{docker_image}} -n {{project_vars['kubernetes']['namespace']}}

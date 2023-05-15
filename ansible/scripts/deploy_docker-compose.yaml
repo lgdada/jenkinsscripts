@@ -1,0 +1,25 @@
+- name: "生成ansible部署playbook脚本: playbook-deploy-docker-compose.yaml"
+  template:
+    src: "{{workspace}}/ansible/templates/playbook-deploy-docker-compose.yaml.jinja"
+    dest: "{{workspace}}/playbook-deploy-docker-compose.yaml"
+
+
+- name: "生成ansible主机文件: hosts"
+  blockinfile:
+    create: yes
+    path: "{{workspace}}/hosts"
+    block: |
+      [remote]
+      remote ansible_ssh_host={{deploy_vars['ansible_host']['ip']}} ansible_ssh_user={{deploy_vars['ansible_host']['user']}} ansible_ssh_port={{deploy_vars['ansible_host']['port']}} ansible_ssh_private_key_file={{workspace}}/ansible/files/{{deploy_vars['ansible_host']['key']}}
+
+- name: 修改key文件属性
+  file:
+    path: "{{workspace}}/ansible/files/{{deploy_vars['ansible_host']['key']}}"
+    mode: '0600'
+
+- name: "生成部署脚本: run_deploy.sh"
+  blockinfile:
+    create: yes
+    path: "{{workspace}}/run_deploy.sh"
+    block: |
+      ANSIBLE_STDOUT_CALLBACK=yaml ansible-playbook -v -i hosts playbook-deploy-docker-compose.yaml

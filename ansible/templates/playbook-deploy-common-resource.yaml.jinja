@@ -1,0 +1,40 @@
+---
+- name: "==== 执行部署任务 ===="
+  hosts: remote
+  gather_facts: false
+  tasks:
+    - set_fact:
+        task: {{task}}
+        build_tag: {{build_tag}}
+        docker_image: {{docker_image}}
+    - name: "拷贝镜像仓库只读授权文件到中转服务器"
+      copy:
+        src: "{{workspace}}/ansible/files/{{register[project_vars['register']]['config']}}/config-readonly.json"
+        dest: "/tmp/config.json"
+    - shell: |
+{% for host in app_vars['hosts'] %}
+        echo "==== 主机地址 {{host}} 部署服务 {{task}} ===="
+        set -ex
+        echo "[拷贝镜像仓库只读授权文件到{{host}}]"
+        scp -o "StrictHostKeyChecking no" /tmp/config.json {{host}}:/tmp/config.json
+        echo "[登录主机{{host}}]"
+        ssh -o "StrictHostKeyChecking no" {{host}} << EOF
+        set -ex
+        cd {{app_vars['workpath']}}/{{task}}
+        # echo "[创建目录]"
+        # mkdir {{task}}-{{build_tag}}
+        echo "[获取镜像]"
+        docker --config /tmp/ pull {{docker_image}}
+        echo "[运行容器]"
+        docker run -d --name={{task}}-{{build_tag}} {{docker_image}}
+        echo "[拷贝文件]"
+        docker cp {{task}}-{{build_tag}}:{{app_vars['docker_resource_path']}} {{task}}-{{build_tag}}
+        echo "[移除容器]"
+        docker rm -f {{task}}-{{build_tag}}
+        echo "[创建链接]"
+        ln -snf  {{task}}-{{build_tag}} {{task}}
+        echo "[重载应用]"
+        {{app_vars['reload_command']}}
+        EOF
+{% endfor %}
+      

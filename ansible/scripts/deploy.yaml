@@ -1,0 +1,26 @@
+- name: 检查项目是否定义deploy_type参数
+  fail:
+    msg: "[error]config.yaml: 项目 {{project}}_{{env}} 配置未匹配 deploy_type: {{deploy_type}}"
+  when: project_vars[deploy_type] is undefined
+
+- name: 检查项目{{deploy_type}}是否定义{{task}}任务
+  fail:
+    msg: "[error]config.yaml: deploy_type: {{deploy_type}}, 任务 {{task}} 未定义"
+  when: project_vars[deploy_type]['apps'][task] is undefined and deploy_type != 'kubernetes'
+
+- set_fact:
+    deploy_vars: "{{project_vars[deploy_type]}}"
+
+- set_fact:
+    app_vars: "{{project_vars[deploy_type]['apps'][task]}}"
+  when: project_vars[deploy_type]['apps'][task] is defined
+
+# 根据deploy_type, 执行相应部署脚本
+- import_tasks: "{{workspace}}/ansible/scripts/deploy_docker-compose.yaml"
+  when: deploy_type == "docker-compose"
+
+- import_tasks: "{{workspace}}/ansible/scripts/deploy_common_resource.yaml"
+  when: deploy_type == "resource"
+
+- import_tasks: "{{workspace}}/ansible/scripts/deploy_kubernetes_deployment.yaml"
+  when: deploy_type == "kubernetes"

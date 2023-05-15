@@ -1,0 +1,9 @@
+FROM {{java['v1.8']['base_image']}}
+
+COPY sourcecode/{{target_path}}*.jar /app.jar
+
+WORKDIR /
+
+{{ Dockerfile_extra }}
+
+CMD {{ Dockerfile_cmd }}

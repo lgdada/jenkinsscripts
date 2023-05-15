@@ -1,0 +1,42 @@
+---
+- name: "==== 执行部署任务 ===="
+  hosts: remote
+  gather_facts: false
+  tasks:
+    - set_fact:
+        task: {{task}}
+        build_tag: {{build_tag}}
+        docker_image: {{docker_image}}
+    - name: "渲染docker-compose.yaml文件到中转服务器"
+      template:
+        src: "{{workspace}}/ansible/templates/{{app_vars['service_template']}}"
+        dest: "/tmp/docker-compose-{{task}}-{{build_tag}}.yaml"
+    - name: "拷贝镜像仓库只读授权文件到中转服务器"
+      copy:
+        src: "{{workspace}}/ansible/files/{{register[project_vars['register']]['config']}}/config-readonly.json"
+        dest: "/tmp/config.json"
+    - shell: |
+{% for host in app_vars['hosts'] %}
+        echo "==== 主机地址 {{host}} 部署服务 {{task}} ===="
+        set -ex
+        echo "[拷贝docker-compose.yaml到目标服务器]"
+        scp -o "StrictHostKeyChecking no" /tmp/docker-compose-{{task}}-{{build_tag}}.yaml {{host}}:/tmp/docker-compose-{{task}}-{{build_tag}}.yaml
+        echo "[拷贝镜像仓库只读授权文件到{{host}}]"
+        scp -o "StrictHostKeyChecking no" /tmp/config.json {{host}}:/tmp/config.json
+        echo "[登录主机{{host}}]"
+        ssh -o "StrictHostKeyChecking no" {{host}} << EOF
+        set -ex
+        cd {{app_vars['workpath']}}/{{task}}
+        echo "[停止服务]"
+        docker-compose down
+        echo "[获取镜像]"
+        docker --config /tmp/ pull {{docker_image}}
+        echo "[拷贝文件]"
+        cp /tmp/docker-compose-{{task}}-{{build_tag}}.yaml ./
+        echo "[创建链接]"
+        ln -snf  docker-compose-{{task}}-{{build_tag}}.yaml docker-compose.yaml
+        echo "[启动服务]"
+        docker-compose up -d
+        EOF
+{% endfor %}
+      

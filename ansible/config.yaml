@@ -1,0 +1,75 @@
+# 镜像仓库
+register:
+  test_harbor:
+    url: harbor_url
+    config: test_harbor_config
+
+# 机器人
+notice_api:
+  test_robot:
+    type: dingding
+    url: '[webhook]'
+
+# app类型
+java:
+  repo_dir: "/usr/local/maven/repo"
+  v1.8:
+    build_image: "maven:3.6.3-openjdk-8"
+    base_image: "openjdk:8-alpine"
+node:
+  v14:
+    build_image: "node:14.17.6"
+    base_image: "tengine:2.3.3"
+  v16:
+    build_image: "node:16.15.1"
+    base_image: "tengine:2.3.3"
+python:
+  v3.6:
+    build_image: "python:3.6.8"
+  v3.8:
+    build_image: "python:3.8.16"
+
+# 项目配置
+project_conf:
+  [project_name]:
+    notice: [true or false]
+    notice_api: test_robot
+    register: test_harbor
+    register_subpath: library
+    deploy: true
+    ## 发布kubernetes应用
+    kubernetes:
+      config: test_k8s_config
+      namespace: public
+      kubectl: kubectl:1.21
+    ## 发布docker-compose应用
+    docker-compose:
+      ansible_host:
+        ip: [ssh_ip]
+        port: [ssh_port]
+        user: root
+        key: test_id_rsa
+      apps:
+        [app_name_1]:
+          service_template: docker-compose-test.yaml.jinja
+          workpath: [定义path]
+          hosts:
+            - ip
+        [app_name_2]:
+          ...
+    ## 发布更新文件的应用
+    resource:
+      ansible_host:
+        ip: [ssh_ip]
+        port: [ssh_port]
+        user: root
+        key: [files/key_file_name]
+      apps:
+        [app_name_1]:
+          docker_resource_path: [定义path]
+          reload_command: "nginx -s reload"
+          workpath: /data/nginx
+          hosts:
+            - ip
+        [app_name_2]:
+          ...

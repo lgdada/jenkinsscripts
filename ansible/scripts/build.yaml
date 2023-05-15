@@ -1,0 +1,38 @@
+# 已定义app_type的应用
+- set_fact:
+    dockerfile: "Dockerfile-{{app_type}}-{{type_version}}"
+  when: app_type != "app"
+
+# 未定义app_type的应用
+- set_fact:
+    dockerfile: Dockerfile-chain-mpbackend
+  when: app_type == "app" and type_version == "chain-mpbackend"
+
+- set_fact:
+    dockerfile: Dockerfile-chain-mpbackend-contract
+  when: app_type == "app" and type_version == "chain-mpbackend-contract"
+
+- set_fact:
+    dockerfile: Dockerfile-chain-monitor
+  when: app_type == "app" and type_version == "chain-monitor"
+
+- set_fact:
+    dockerfile: Dockerfile-luyu-router
+  when: app_type == "app" and type_version == "luyu-router"
+
+- set_fact:
+    dockerfile: Dockerfile-luyu-plugin
+  when: app_type == "app" and type_version == "luyu-plugin"
+
+- set_fact:
+    dockerfile: Dockerfile-luyu-account-manager
+  when: app_type == "app" and type_version == "account-manager"
+
+# 构建镜像
+- import_tasks: "{{workspace}}/ansible/scripts/build_java_image.yaml"
+  when: dockerfile is defined and app_type == "java"
+
+- import_tasks: "{{workspace}}/ansible/scripts/build_docker_image.yaml"
+  when: dockerfile is defined and app_type != "java"
+
+

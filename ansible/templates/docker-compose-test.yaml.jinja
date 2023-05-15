@@ -1,0 +1,17 @@
+version: '2.2'
+services:
+  {{task}}:
+    image: {{docker_image}}
+    container_name: {{task}}
+    privileged: true
+    restart: always
+    cpus: "1"
+    mem_limit: 2048m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "2g"
+        max-file: "4"
+    volumes:
+       - ./logs:/root/logs
+    network_mode: "host"

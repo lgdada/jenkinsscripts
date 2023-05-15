@@ -1,0 +1,37 @@
+# run.sh脚本调用ansible ploybook的入口，根据action动作区分脚本实现的功能
+---
+- name: "==== 定义变量 ===="
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - set_fact:
+        temp_var: "{{project}}_{{env}}"
+    - fail:
+        msg: "[error]config.yaml: 项目{{temp_var}}未定义"
+      when: project_conf[temp_var] is undefined
+    - set_fact:
+        project_vars: "{{project_conf[temp_var]}}"
+    - set_fact:
+        docker_image: "{{register[project_vars['register']]['url']}}/{{project_vars['register_subpath']}}/{{project}}_{{task}}_{{env}}:{{build_tag}}"
+  vars_files:
+    - '{{workspace}}/ansible/config.yaml'
+
+- name: "==== 动作：{{action}} ，环境：{{project}}_{{env}}，任务：{{task}} ===="
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - import_tasks: '{{workspace}}/ansible/scripts/build.yaml'
+      when: action == "build"
+    - import_tasks: '{{workspace}}/ansible/scripts/deploy.yaml'
+      when: action == "deploy"
+  vars_files:
+    - '{{workspace}}/ansible/config.yaml'
+
+- name: "==== 发送通知 ===="
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - import_tasks: '{{workspace}}/ansible/scripts/notice_task.yaml'
+      when: project_vars['notice'] and action == "notice"
+  vars_files:
+    - '{{workspace}}/ansible/config.yaml'

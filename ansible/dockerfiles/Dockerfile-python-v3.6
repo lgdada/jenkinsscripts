@@ -1,0 +1,8 @@
+FROM {{python['v3.6']['build_image']}}
+ENV LANG C.UTF-8
+ENV TZ Asia/Shanghai
+COPY sourcecode/ /opt/app/
+WORKDIR /opt/app/
+RUN {{build_command}}
+{{ Dockerfile_extra }}
+CMD {{ Dockerfile_cmd }}

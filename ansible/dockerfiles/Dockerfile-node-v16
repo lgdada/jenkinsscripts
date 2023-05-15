@@ -1,0 +1,9 @@
+FROM {{node['v16']['build_image']}} as build
+RUN mkdir /src
+COPY sourcecode/ /src/
+RUN cd /src/{{build_path}} && {{build_command}}
+
+FROM {{node['v16']['base_image']}}
+COPY --from=build /src/{{build_path}}/dist  /etc/nginx/html/
+{{ Dockerfile_extra }}
+CMD {{ Dockerfile_cmd }}

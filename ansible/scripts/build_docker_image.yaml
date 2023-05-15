@@ -1,0 +1,18 @@
+# 通用的构建镜像脚本
+- name: "生成Dockerfile文件: {{dockerfile}}"
+  template:
+    src: "{{workspace}}/ansible/dockerfiles/{{dockerfile}}"
+    dest: "{{workspace}}/Dockerfile"
+    force: yes
+
+- name: "创建构建脚本: run_build.sh"
+  blockinfile:
+    create: yes
+    path: "{{workspace}}/run_build.sh"
+    block: |
+      set -e
+      cd {{workspace}}
+      docker build --pull -t {{docker_image}} . --no-cache
+      docker --config {{workspace}}/ansible/files/{{register[project_vars['register']]['config']}}/ push {{docker_image}}
+      echo "生成镜像：【{{docker_image}}】"
+      docker rmi {{docker_image}}

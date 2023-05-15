@@ -1,0 +1,24 @@
+# 通知发送脚本，当前适用飞书api
+- set_fact:
+    notice_url: "{{notice_api[project_vars['notice_api']]['url']}}"
+    notice_type: "{{notice_api[project_vars['notice_api']]['type']}}"
+
+- name: 发送通知到飞书
+  uri:
+    url: "{{notice_url}}"
+    method: POST
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body: '{"msg_type":"post","content":{"post":{"zh_cn":{"title":"【{{full_displayname}}】 发布【{{current_result}}】","content":[[{"tag":"text","text":"任务："},{"tag":"a","text":"{{job_name}}","href":"{{build_url}}"}],[{"tag":"text","text":"时长："},{"tag":"text","text":"{{duration_string}}"}],[{"tag":"text","text":"状态："},{"tag":"text","text":"{{current_result}}"}],[{"tag":"text","text":"执行人："},{"tag":"text","text":"{{build_user}}"}],[{"tag":"text","text":"执行动作："},{"tag":"text","text":"{{run_action}}"}],[{"tag":"text","text":"代码地址："},{"tag":"text","text":"{{code_url}}"}],[{"tag":"text","text":"构建分支/tag："},{"tag":"text","text":"{{branch}}"}],[{"tag":"text","text":"发布说明："},{"tag":"text","text":"{{instruction}}"}]]}}}}'
+  when: notice_type == 'feishu' and NOTICE | bool
+
+- name: 发送通知到钉钉
+  uri:
+    url: "{{notice_url}}"
+    method: POST
+    headers:
+      Content-Type: application/json
+    body_format: json
+    body: '{"msgtype": "markdown","markdown": {"title": "【{{full_displayname}}】 发布【{{current_result}}】","text": "### 【{{full_displayname}}】 发布【{{current_result}}】\n- 任务名称：[{{job_name}}]({{build_url}}) \n- 任务时长：{{duration_string}} \n- 执行结果：{{current_result}} \n- 执行用户：{{build_user}} \n- 执行动作：{{run_action}} \n- 代码仓库：{{code_url}} \n- 构建分支/tag：{{branch}} \n- 发布说明：{{instruction}}"}}'
+  when: notice_type == 'dingding' and NOTICE | bool
